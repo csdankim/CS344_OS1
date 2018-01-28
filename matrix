@@ -10,14 +10,14 @@ col_num1=0
 row_num2=0
 col_num2=0
 
-# read the file in
+# read the files in & creat matrixs
 read1() {
 	while read myLine1 
 	do
 	       col_num1=0
 	       for i in $myLine1
 	       do
-	               	matrix1[$row_num1,$col_num1]=$i
+	               	matrix1[$row_num1,$col_num1]=$i 
 	               	((col_num1++))
 	       done
 	       ((row_num1++))
