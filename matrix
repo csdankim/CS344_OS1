@@ -1,0 +1,187 @@
+#!/bin/bash 
+# Program 1 - matrices
+# ID: 933271081, Chih-Hsiang Wagn
+
+# declare & variables for readin
+declare -A matrix1 
+declare -A matrix2
+row_num1=0
+col_num1=0
+row_num2=0
+col_num2=0
+
+# read the file in
+read1() {
+	while read myLine1 
+	do
+	       col_num1=0
+	       for i in $myLine1
+	       do
+	               	matrix1[$row_num1,$col_num1]=$i
+	               	((col_num1++))
+	       done
+	       ((row_num1++))
+	done < $1
+}
+read2() {
+        while read myLine2
+        do      
+                col_num2=0
+                for i in $myLine2
+                do      
+                       	 matrix2[$row_num2,$col_num2]=$i
+                       	 ((col_num2++))
+                done
+                ((row_num2++))
+        done < $1
+}
+# dims - print the dimensions of the matrix as the number of rows, followed by a space, then the number of columns
+dims() {
+        read1 $1
+	echo $row_num1 $col_num1
+}
+# transpose - reflect the elements of the matrix along the main diagonal.
+transpose() {
+	read1 $1	
+
+	for ((i=0;i<col_num1;i++))
+	do
+		for ((j=0;j<row_num1;j++))
+		do
+			if [ "$j" == "$(($row_num1 - 1))" ]
+			then
+				echo -n "${matrix1[$j,$i]}"
+			else	
+				echo -n "${matrix1[$j,$i]}	"	
+			fi
+		done
+		echo
+	done
+}
+# mean - take an MxN matrix and return an 1xN row vector
+mean() {
+	read1 $1
+	sum=0
+	mean=0
+	
+	for ((i=0;i<col_num1;i++))
+	do
+		sum=0
+		mean=0
+		for ((j=0;j<row_num1;j++))
+		do
+			sum=$(($sum + ${matrix1[$j,$i]}))	
+		done
+
+		if [ $sum = 0 ]
+		then
+			if [ "$i" == "$((col_num1 - 1))" ]	
+			then
+				echo -n "$sum"
+			else
+				echo -n "$sum	"
+			fi
+		else
+			# (a + (b/2)*( (a>0)*2-1 )) / b	
+			mean=$(( ($sum + ($row_num1/2) * ( ($sum>0)*2-1 )) / $row_num1 ))
+			if [ "$i" == "$((col_num1 - 1))" ]
+			then
+				echo -n "$mean"
+			else
+				echo -n "$mean	"
+			fi
+		fi  
+	done
+	echo
+}
+# add - take two MxN matrices and add them together element-wise to produce an MxN matrix. add should return an error if the matrices do not have the same dimensions.
+add() {
+	read1 $1
+	read2 $2
+	if [ $row_num1 -ne $row_num2 ] || [ $col_num1 -ne $col_num2 ]
+	then
+		echo "invalid dimensions for adding" 1>&2
+		exit 100
+	fi
+	sum=0
+
+	for ((i=0;i<row_num1;i++)) 
+	do
+		for ((j=0;j<col_num1;j++)) 
+		do
+			m1=${matrix1[$i,$j]}
+			m2=${matrix2[$i,$j]}
+			sum=$(($m1 + $m2))
+
+			if [ "$j" == "$(($col_num1 - 1))" ]
+			then
+				echo -n "$sum"
+			else
+				echo -n "$sum	"
+			fi
+		done
+		echo
+	done
+}
+# multiply - take an MxN and NxP matrix and produce an MxP matrix
+multiply() {
+	read1 $1
+	read2 $2
+	sum=0
+
+	for ((i=0;i<row_num1;i++))
+	do
+		for ((j=0;j<col_num2;j++))
+		do
+			sum=0
+			for ((k=0;k<col_num1;k++))
+			do
+				m1=${matrix1[$i,$k]}
+				m2=${matrix2[$k,$j]}
+				sum=$(($sum + $(($m1 * $m2))))
+			done
+
+			if [ "$j" == "$(($col_num2 - 1))" ]
+			then
+				echo -n "$sum"
+			else
+				echo -n "$sum	"
+			fi
+		done
+		echo
+	done
+}
+# determine which function to use
+fun_name=$1
+if [ "$fun_name" == "dims" ] || [ "$fun_name" == "transpose" ] || [ "$fun_name" == "mean" ]
+then	
+	matrix_stdin="${2:-/dev/stdin}"
+	
+	if test "$3"
+	then
+		echo "invalid number of input files" 1>&2
+		exit 100
+	elif ! [ -r $2 ]
+	then
+		echo "file is not readable" 1>&2
+		exit 100
+	else
+		$fun_name $matrix_stdin
+	fi
+elif [ "$fun_name" == "add" ] || [ "$fun_name" == "multiply" ]
+then
+	if (( $# == 1 )) || test "$4"
+	then
+		echo "invalid number of input files" 1>&2
+		exit 100
+	elif ! [ -r $2 ] || ! [ -r $3 ]
+	then
+		echo "file is not readable" 1>&2
+		exit 100
+	else
+		$fun_name $2 $3
+	fi
+else
+	echo "invalid function name" 1>&2
+	exit 100
+fi
